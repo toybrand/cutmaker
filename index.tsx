@@ -658,13 +658,21 @@ const App = () => {
 
         const handleApiError = (error: any) => {
             console.error("API Error:", error);
-            alert(`An error occurred: ${error.message}`);
-            if (error.message?.includes("Requested entity was not found")) {
-                 alert("The selected API key is no longer valid. Please select a new one.");
+            let errorMessage = `An error occurred: ${error.message}`;
+
+            // Check if in AI Studio environment and if it's an API key error
+            if (window.aistudio && error.message?.includes("Requested entity was not found")) {
+                 errorMessage = "The selected API key is no longer valid. Please select a new one.";
                  setApiKeySelected(false);
-                 document.getElementById('api-key-overlay').classList.remove('hidden');
+                 const apiKeyOverlay = document.getElementById('api-key-overlay');
+                 if(apiKeyOverlay) apiKeyOverlay.classList.remove('hidden');
+            } else if (error.message?.includes("API key not valid")) {
+                errorMessage = "The provided API key is not valid. Please check your environment variables on Vercel.";
+            } else if (error.message?.includes("key is required")) {
+                 errorMessage = "API key is missing. Please set it up in your Vercel environment variables.";
             }
-        }
+            alert(errorMessage);
+        };
 
         const handleCameraGenerate = async () => {
             if (!apiKeySelected) {
@@ -909,20 +917,42 @@ const App = () => {
             setupLanguageSwitcher();
             
             // Setup API Key flow
-            const checkApiKey = async () => {
-                if (await window.aistudio.hasSelectedApiKey()) {
-                    setApiKeySelected(true);
-                    document.getElementById('api-key-overlay').classList.add('hidden');
+            const setupApiKeyFlow = async () => {
+                // Check if the aistudio environment is available
+                if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+                    const apiKeyOverlay = document.getElementById('api-key-overlay');
+                    const selectApiKeyBtn = document.getElementById('select-api-key-btn');
+
+                    const checkApiKey = async () => {
+                        if (await window.aistudio.hasSelectedApiKey()) {
+                            setApiKeySelected(true);
+                            if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
+                        } else {
+                            setApiKeySelected(false);
+                            if (apiKeyOverlay) apiKeyOverlay.classList.remove('hidden');
+                        }
+                    };
+                    
+                    if (selectApiKeyBtn) {
+                        selectApiKeyBtn.addEventListener('click', async () => {
+                            await window.aistudio.openSelectKey();
+                            // Assume key selection is successful to avoid race conditions and immediately enable the app.
+                            setApiKeySelected(true); 
+                            if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
+                        });
+                    }
+
+                    await checkApiKey();
                 } else {
-                    setApiKeySelected(false);
-                    document.getElementById('api-key-overlay').classList.remove('hidden');
+                    // If not in aistudio environment, assume API_KEY is set via environment variables.
+                    // Hide the overlay and enable the app.
+                    console.log("Not in AI Studio environment. Assuming API_KEY is set via Vercel environment variables.");
+                    setApiKeySelected(true);
+                    const apiKeyOverlay = document.getElementById('api-key-overlay');
+                    if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
                 }
             };
-            checkApiKey();
-            document.getElementById('select-api-key-btn').addEventListener('click', async () => {
-                await window.aistudio.openSelectKey();
-                await checkApiKey();
-            });
+            setupApiKeyFlow();
         };
         
         const updateGenerateButtonState = () => {
