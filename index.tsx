@@ -18,6 +18,8 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [renderTrigger, setRenderTrigger] = useState(0);
     const [apiKeySelected, setApiKeySelected] = useState(false);
+    const userApiKey = useRef<string | null>(null);
+
     const imageSources = useRef({
         subject: [null],
         scene: [null],
@@ -667,16 +669,23 @@ const App = () => {
                  const apiKeyOverlay = document.getElementById('api-key-overlay');
                  if(apiKeyOverlay) apiKeyOverlay.classList.remove('hidden');
             } else if (error.message?.includes("API key not valid")) {
-                errorMessage = "The provided API key is not valid. Please check your environment variables on Vercel.";
+                errorMessage = "The provided API key is not valid. Please check your key and try again.";
+                // For Vercel, clear the bad key and ask again
+                localStorage.removeItem('cutmaker_api_key');
+                userApiKey.current = null;
+                setApiKeySelected(false);
+                document.getElementById('user-api-key-overlay')?.classList.remove('hidden');
             } else if (error.message?.includes("key is required")) {
-                 errorMessage = "API key is missing. Please set it up in your Vercel environment variables.";
+                 errorMessage = "API key is missing. Please enter your key.";
+                 document.getElementById('user-api-key-overlay')?.classList.remove('hidden');
             }
             alert(errorMessage);
         };
 
         const handleCameraGenerate = async () => {
-            if (!apiKeySelected) {
-                alert("Please select an API key first.");
+            const key = window.aistudio ? (window as any).process?.env?.API_KEY : userApiKey.current;
+            if (!key) {
+                alert("API Key is not available. Please configure it.");
                 return;
             }
             const mainImage = document.getElementById('main-image') as HTMLImageElement;
@@ -702,7 +711,7 @@ const App = () => {
             if(isEditModeActive.current) deactivateEditMode();
         
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: key });
                 const blob = await (await fetch(mainImage.src)).blob();
                 if (!blob) throw new Error("Could not create image blob.");
                 
@@ -918,13 +927,13 @@ const App = () => {
             
             // Setup API Key flow
             const setupApiKeyFlow = async () => {
-                // Check if the aistudio environment is available
-                if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+                if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
+                    // AI Studio Environment
                     const apiKeyOverlay = document.getElementById('api-key-overlay');
                     const selectApiKeyBtn = document.getElementById('select-api-key-btn');
-
+            
                     const checkApiKey = async () => {
-                        if (await window.aistudio.hasSelectedApiKey()) {
+                        if (await (window as any).aistudio.hasSelectedApiKey()) {
                             setApiKeySelected(true);
                             if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
                         } else {
@@ -932,26 +941,46 @@ const App = () => {
                             if (apiKeyOverlay) apiKeyOverlay.classList.remove('hidden');
                         }
                     };
-                    
+            
                     if (selectApiKeyBtn) {
                         selectApiKeyBtn.addEventListener('click', async () => {
-                            await window.aistudio.openSelectKey();
-                            // Assume key selection is successful to avoid race conditions and immediately enable the app.
-                            setApiKeySelected(true); 
+                            await (window as any).aistudio.openSelectKey();
+                            setApiKeySelected(true);
                             if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
                         });
                     }
-
+            
                     await checkApiKey();
                 } else {
-                    // If not in aistudio environment, assume API_KEY is set via environment variables.
-                    // Hide the overlay and enable the app.
-                    console.log("Not in AI Studio environment. Assuming API_KEY is set via Vercel environment variables.");
-                    setApiKeySelected(true);
-                    const apiKeyOverlay = document.getElementById('api-key-overlay');
-                    if (apiKeyOverlay) apiKeyOverlay.classList.add('hidden');
+                    // Vercel / Web Environment
+                    const userApiKeyOverlay = document.getElementById('user-api-key-overlay');
+                    const apiKeyInput = document.getElementById('api-key-input') as HTMLInputElement;
+                    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+            
+                    const savedKey = localStorage.getItem('cutmaker_api_key');
+                    if (savedKey) {
+                        userApiKey.current = savedKey;
+                        setApiKeySelected(true);
+                    } else {
+                        if (userApiKeyOverlay) userApiKeyOverlay.classList.remove('hidden');
+                    }
+            
+                    if (saveApiKeyBtn && apiKeyInput) {
+                        saveApiKeyBtn.addEventListener('click', () => {
+                            const key = apiKeyInput.value.trim();
+                            if (key) {
+                                localStorage.setItem('cutmaker_api_key', key);
+                                userApiKey.current = key;
+                                setApiKeySelected(true);
+                                if (userApiKeyOverlay) userApiKeyOverlay.classList.add('hidden');
+                            } else {
+                                alert("Please enter a valid API key.");
+                            }
+                        });
+                    }
                 }
             };
+            
             setupApiKeyFlow();
         };
         
@@ -1638,8 +1667,9 @@ const App = () => {
         };
 
         const handleApplyEdit = async () => {
-            if (!apiKeySelected) {
-                alert("Please select an API key first.");
+            const key = window.aistudio ? (window as any).process?.env?.API_KEY : userApiKey.current;
+            if (!key) {
+                alert("API Key is not available. Please configure it.");
                 return;
             }
             if (!isEditModeActive.current) return;
@@ -1669,7 +1699,7 @@ const App = () => {
             deactivateEditMode();
         
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: key });
                 // Create a temporary canvas to combine image and mask
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
@@ -1883,8 +1913,9 @@ const App = () => {
         };
         
         const handleUpscaleAndReframe = async () => {
-            if (!apiKeySelected) {
-                alert("Please select an API key first.");
+            const key = window.aistudio ? (window as any).process?.env?.API_KEY : userApiKey.current;
+            if (!key) {
+                alert("API Key is not available. Please configure it.");
                 return;
             }
             const mainImage = document.getElementById('main-image') as HTMLImageElement;
@@ -1900,7 +1931,7 @@ const App = () => {
             document.getElementById('main-image').classList.add('hidden');
         
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: key });
                 const blob = await (await fetch(mainImage.src)).blob();
                 if (!blob) throw new Error("Could not create image blob for upscaling.");
         
@@ -2065,7 +2096,7 @@ const App = () => {
         
             const intensityValueEl = document.getElementById('light-intensity-value');
             const tempValueEl = document.getElementById('light-temp-value');
-            const hardnessValueEl = document.getElementById('light-hardness-value');
+            const hardnessValueEl = document.getElementById('hardness-value');
         
             const resetBtn = document.getElementById('reset-light-btn') as HTMLButtonElement;
         
@@ -2201,8 +2232,9 @@ const App = () => {
         };
 
         const handleGenerate = async () => {
-            if (!apiKeySelected) {
-                alert("Please select an API key first.");
+            const key = window.aistudio ? (window as any).process?.env?.API_KEY : userApiKey.current;
+            if (!key) {
+                alert("API Key is not available. Please configure it.");
                 return;
             }
             const subjectParts = await Promise.all(imageSources.current.subject.filter(f => f).map(fileToGenerativePart));
@@ -2261,7 +2293,7 @@ const App = () => {
             }
             
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: key });
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash-image',
                     contents: { parts: userPrompt },
@@ -2289,8 +2321,9 @@ const App = () => {
         };
 
         const handleComposeScene = async () => {
-            if (!apiKeySelected) {
-                alert("Please select an API key first.");
+            const key = window.aistudio ? (window as any).process?.env?.API_KEY : userApiKey.current;
+            if (!key) {
+                alert("API Key is not available. Please configure it.");
                 return;
             }
             const characterParts = await Promise.all(imageSources.current.characters.filter(f => f).map(fileToGenerativePart));
@@ -2339,7 +2372,7 @@ const App = () => {
 
 
              try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: key });
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash-image',
                     contents: { parts: userPrompt },
