@@ -16,9 +16,9 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
+  <!-- Modal for AI Studio Environment -->
   <div id="api-key-overlay" class="hidden">
     <div class="api-key-modal">
       <h2>API 키 선택</h2>
@@ -27,6 +27,18 @@
       <button id="select-api-key-btn" class="action-btn">API 키 선택</button>
     </div>
   </div>
+
+  <!-- Modal for Vercel/Web Environment -->
+  <div id="user-api-key-overlay" class="hidden">
+    <div class="api-key-modal">
+      <h2>Google AI API 키 필요</h2>
+      <p>이 애플리케이션을 사용하려면 Google AI API 키를 입력해야 합니다. 키는 브라우저에 안전하게 저장됩니다.</p>
+      <p><a href="https://aistudio.google.com/app/apikey" target="_blank">AI Studio에서 API 키 받기</a></p>
+      <input type="password" id="api-key-input" placeholder="여기에 API 키를 입력하세요">
+      <button id="save-api-key-btn" class="action-btn">키 저장하고 시작하기</button>
+    </div>
+  </div>
+
   <div id="app-container">
     <header>
       <div class="logo">Cut Maker</div>
@@ -401,7 +413,7 @@
               <div class="slider-control">
                   <label for="light-hardness" data-translate-key="panel.light.controls.hardness">경도</label>
                   <input type="range" id="light-hardness" min="0" max="100" value="50">
-                  <span id="light-hardness-value" class="slider-value">50%</span>
+                  <span id="hardness-value" class="slider-value">50%</span>
               </div>
                <div class="slider-control">
                   <label for="light-color" data-translate-key="panel.light.controls.color">색상</label>
@@ -520,6 +532,5 @@
   </div>
 
   <script type="module" src="index.tsx"></script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
