@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cut Maker</title>
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div id="api-key-overlay" class="hidden">
+    <div class="api-key-modal">
+      <h2>API 키 선택</h2>
+      <p>이 애플리케이션을 사용하려면 Google AI Studio API 키가 필요합니다. 프로젝트에 API 키를 선택하고 결제를 사용 설정하세요.</p>
+      <p><a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank">Google AI 결제에 대해 자세히 알아보기</a></p>
+      <button id="select-api-key-btn" class="action-btn">API 키 선택</button>
+    </div>
+  </div>
+  <div id="app-container">
+    <header>
+      <div class="logo">Cut Maker</div>
+      <div class="header-controls">
+         <div id="language-dropdown">
+            <button id="current-lang-btn">
+                <span id="current-lang-text">KR</span>
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+            </button>
+            <div id="language-options" class="hidden">
+                <button class="lang-option-btn" data-lang="ko">한국어</button>
+                <button class="lang-option-btn" data-lang="en">English</button>
+                <button class="lang-option-btn" data-lang="ja">日本語</button>
+            </div>
+        </div>
+        <div class="trial-info" data-translate-key="header.title">Image Generator</div>
+      </div>
+    </header>
+    <main>
+      <aside class="sidebar">
+        <div class="toolbar">
+          <button class="tool-btn active" data-mode="generate" data-translate-key-title="tool.generate"><span class="material-symbols-outlined">auto_awesome</span></button>
+          <button class="tool-btn" data-mode="compose" data-translate-key-title="tool.compose"><span class="material-symbols-outlined">movie_edit</span></button>
+          <button class="tool-btn" data-mode="edit" data-translate-key-title="tool.edit"><span class="material-symbols-outlined">edit</span></button>
+          <button class="tool-btn" data-mode="crop" data-translate-key-title="tool.crop"><span class="material-symbols-outlined">crop</span></button>
+          <button class="tool-btn" data-mode="camera" data-translate-key-title="tool.camera"><span class="material-symbols-outlined">camera</span></button>
+          <button class="tool-btn" data-mode="light" data-translate-key-title="tool.light"><span class="material-symbols-outlined">lightbulb</span></button>
+        </div>
+        <div id="generate-panel" class="panel">
+          <div class="composition-section" data-type="subject">
+            <div class="section-header">
+              <h3 data-translate-key="panel.generate.subject">피사체</h3>
+              <div class="section-controls">
+                <button class="icon-btn delete-btn" data-translate-key-title="common.deleteAll"><span class="material-symbols-outlined">delete</span></button>
+                <button class="icon-btn add-btn" data-translate-key-title="common.addSlot"><span class="material-symbols-outlined">add_circle</span></button>
+              </div>
+            </div>
+            <div class="drop-zone-container">
+                <div class="drop-zone">
+                  <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                  <span class="material-symbols-outlined placeholder-icon">person_add</span>
+                  <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                  <input type="file" accept="image/*" class="file-input">
+                </div>
+            </div>
+          </div>
+
+          <div class="composition-section" data-type="scene">
+            <div class="section-header">
+              <h3 data-translate-key="panel.generate.scene">장면</h3>
+              <div class="section-controls">
+                <button class="icon-btn delete-btn" data-translate-key-title="common.deleteAll"><span class="material-symbols-outlined">delete</span></button>
+                <button class="icon-btn add-btn" data-translate-key-title="common.addSlot"><span class="material-symbols-outlined">add_location_alt</span></button>
+              </div>
+            </div>
+            <div class="drop-zone-container">
+                <div class="drop-zone">
+                  <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                  <span class="material-symbols-outlined placeholder-icon">add_location_alt</span>
+                  <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                  <input type="file" accept="image/*" class="file-input">
+                </div>
+            </div>
+          </div>
+
+          <div class="composition-section" data-type="style">
+            <div class="section-header">
+              <h3 data-translate-key="panel.generate.style">스타일</h3>
+              <div class="section-controls">
+                <button class="icon-btn delete-btn" data-translate-key-title="common.deleteAll"><span class="material-symbols-outlined">delete</span></button>
+                <button class="icon-btn add-btn" data-translate-key-title="common.addSlot"><span class="material-symbols-outlined">add_circle</span></button>
+              </div>
+            </div>
+             <div class="drop-zone-container">
+                <div class="drop-zone">
+                  <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                  <span class="material-symbols-outlined placeholder-icon">palette</span>
+                  <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                  <input type="file" accept="image/*" class="file-input">
+                </div>
+            </div>
+          </div>
+
+          <div class="prompt-section">
+             <textarea id="prompt-input" data-translate-key-placeholder="panel.generate.prompt.placeholder" placeholder="생성하고 싶은 이미지에 대한 설명을 입력하세요..."></textarea>
+             <button id="generate-btn" class="action-btn">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <span data-translate-key="panel.generate.button">생성하기</span>
+            </button>
+          </div>
+          <div class="sidebar-actions common-image-actions">
+              <div class="button-group">
+                  <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                  <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+              </div>
+          </div>
+        </div>
+
+        <div id="compose-panel" class="panel hidden">
+          <div class="composition-section" data-type="characters">
+            <div class="section-header">
+              <h3 data-translate-key="panel.compose.characters">등장인물</h3>
+              <div class="section-controls">
+                <button class="icon-btn delete-btn" data-translate-key-title="common.deleteAll"><span class="material-symbols-outlined">delete</span></button>
+                <button class="icon-btn add-btn" data-translate-key-title="common.addSlot"><span class="material-symbols-outlined">add_circle</span></button>
+              </div>
+            </div>
+            <div id="character-drop-zones" class="drop-zone-container">
+                <div class="drop-zone character-drop-zone">
+                  <span class="char-number">1</span>
+                  <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                  <span class="material-symbols-outlined placeholder-icon">person_add</span>
+                  <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                  <input type="file" accept="image/*" class="file-input">
+                </div>
+            </div>
+          </div>
+          <div class="composition-section" data-type="background">
+            <div class="section-header">
+              <h3 data-translate-key="panel.compose.background">배경</h3>
+            </div>
+            <div id="background-drop-zone-container" class="drop-zone-container">
+              <div class="drop-zone" id="background-drop-zone">
+                <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                <span class="material-symbols-outlined placeholder-icon">landscape</span>
+                <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                <input type="file" accept="image/*" class="file-input">
+              </div>
+              <button id="edit-scene-btn" class="secondary-btn edit-scene-btn hidden">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span data-translate-key="panel.compose.editScene">연출 편집</span>
+              </button>
+            </div>
+          </div>
+           <div class="controls-section">
+              <h3 data-translate-key="panel.generate.aspectRatioHint">종횡비 힌트</h3>
+              <div id="compose-aspect-ratios" class="aspect-ratios">
+                  <button class="aspect-btn active" data-ratio="auto" data-translate-key="panel.generate.aspect.auto">자동</button>
+                  <button class="aspect-btn" data-ratio="16:9">16:9</button>
+                  <button class="aspect-btn" data-ratio="4:3">4:3</button>
+                  <button class="aspect-btn" data-ratio="3:2">3:2</button>
+                  <button class="aspect-btn" data-ratio="1:1">1:1</button>
+                  <button class="aspect-btn" data-ratio="2:3">2:3</button>
+                  <button class="aspect-btn" data-ratio="3:4">3:4</button>
+                  <button class="aspect-btn" data-ratio="9:16">9:16</button>
+              </div>
+          </div>
+          <div class="prompt-section">
+            <textarea id="compose-prompt-input" data-translate-key-placeholder="panel.compose.prompt.placeholder" placeholder="장면 합성에 대한 추가 지시사항..."></textarea>
+            <button id="compose-scene-btn" class="action-btn">
+              <span class="material-symbols-outlined">movie_filter</span>
+              <span data-translate-key="panel.compose.button">장면생성</span>
+            </button>
+          </div>
+          <div class="sidebar-actions common-image-actions">
+              <div class="button-group">
+                  <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                  <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+              </div>
+          </div>
+        </div>
+
+        <div id="edit-panel" class="panel hidden">
+            <div class="composition-section" data-type="edit">
+                <div class="section-header">
+                  <h3 data-translate-key="panel.edit.image">편집할 이미지</h3>
+                </div>
+                <div class="drop-zone-container">
+                    <div class="drop-zone" id="edit-image-drop-zone">
+                      <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                      <span class="material-symbols-outlined placeholder-icon">add_photo_alternate</span>
+                      <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                      <input type="file" accept="image/*" class="file-input">
+                    </div>
+                </div>
+            </div>
+            <div class="controls-section">
+                <h3 data-translate-key="panel.edit.brush">브러시</h3>
+                <div class="control-item">
+                    <label for="brush-size"><span data-translate-key="panel.edit.brush.size">크기</span>: <span id="brush-size-value">20</span></label>
+                    <input type="range" id="brush-size" min="1" max="100" value="20">
+                </div>
+                <div class="button-group">
+                     <button id="undo-stroke-btn" class="secondary-btn">
+                        <span class="material-symbols-outlined">undo</span>
+                        <span data-translate-key="panel.edit.brush.undo">실행 취소</span>
+                    </button>
+                    <button id="clear-mask-btn" class="secondary-btn">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                        <span data-translate-key="panel.edit.brush.clearMask">마스크 지우기</span>
+                    </button>
+                </div>
+            </div>
+            <div class="prompt-section">
+                <textarea id="edit-prompt-input" data-translate-key-placeholder="panel.edit.prompt.placeholder" placeholder="이미지의 선택된 영역을 어떻게 수정할까요?"></textarea>
+                <button id="apply-edit-btn" class="action-btn">
+                    <span class="material-symbols-outlined">brush</span>
+                    <span data-translate-key="panel.edit.button">수정 적용하기</span>
+                </button>
+            </div>
+            <div class="sidebar-actions common-image-actions">
+                <div class="button-group">
+                    <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                    <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+                </div>
+            </div>
+        </div>
+          
+        <div id="crop-panel" class="panel hidden">
+            <div class="composition-section" data-type="crop">
+                <div class="section-header">
+                  <h3 data-translate-key="panel.crop.image">자를 이미지</h3>
+                </div>
+                <div class="drop-zone-container">
+                    <div class="drop-zone" id="crop-image-drop-zone">
+                      <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                      <span class="material-symbols-outlined placeholder-icon">add_photo_alternate</span>
+                      <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                      <input type="file" accept="image/*" class="file-input">
+                    </div>
+                </div>
+            </div>
+            <div class="controls-section">
+                <h3 data-translate-key="panel.crop.aspectRatio">종횡비</h3>
+                <div class="control-item">
+                    <div class="aspect-ratios">
+                        <button class="aspect-btn" data-ratio="16:9">16:9</button>
+                        <button class="aspect-btn" data-ratio="4:3">4:3</button>
+                        <button class="aspect-btn" data-ratio="3:2">3:2</button>
+                        <button class="aspect-btn" data-ratio="1:1">1:1</button>
+                        <button class="aspect-btn" data-ratio="2:3">2:3</button>
+                        <button class="aspect-btn" data-ratio="3:4">3:4</button>
+                        <button class="aspect-btn" data-ratio="9:16">9:16</button>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-actions">
+                <button id="crop-image-btn" class="action-btn-sidebar" disabled data-translate-key="panel.crop.button.crop">1. 이미지 자르기</button>
+                <button id="upscale-image-btn" class="action-btn-sidebar" disabled data-translate-key="panel.crop.button.upscale">2. 화질 개선 및 리프레임</button>
+            </div>
+            <div class="sidebar-actions common-image-actions">
+                <div class="button-group">
+                    <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                    <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="camera-panel" class="panel hidden">
+          <div class="composition-section" data-type="camera">
+            <div class="section-header">
+              <h3 data-translate-key="panel.camera.image">카메라 이미지</h3>
+            </div>
+            <div class="drop-zone-container">
+                <div class="drop-zone" id="camera-image-drop-zone">
+                  <button class="icon-btn individual-delete-btn" data-translate-key-title="common.deleteImage"><span class="material-symbols-outlined">close</span></button>
+                  <span class="material-symbols-outlined placeholder-icon">add_photo_alternate</span>
+                  <p data-translate-key="dropzone.prompt">이미지 드롭 또는 클릭</p>
+                  <input type="file" accept="image/*" class="file-input">
+                </div>
+            </div>
+          </div>
+          <div class="camera-panel-header">
+              <h3><span data-translate-key="panel.camera.title">카메라 큐브</span> <span class="tooltip" data-translate-key-title="panel.camera.tooltip">?</span></h3>
+              <div class="toggle-control">
+                  <label for="invert-toggle" class="toggle-label" data-translate-key="panel.camera.invert">조종방향 반전</label>
+                  <label class="toggle-switch">
+                      <input type="checkbox" id="invert-toggle">
+                      <span class="toggle-slider"></span>
+                  </label>
+              </div>
+          </div>
+      
+          <div class="camera-cube-wrapper">
+              <div id="camera-cube-container" class="camera-cube-container">
+                  <div id="camera-cube">
+                      <div class="face face-front">FRONT</div>
+                      <div class="face face-back">BACK</div>
+                      <div class="face face-right">RIGHT</div>
+                      <div class="face face-left">LEFT</div>
+                      <div class="face face-top">TOP</div>
+                      <div class="face face-bottom">BOTTOM</div>
+                  </div>
+              </div>
+              <p class="cube-caption" data-translate-key="panel.camera.caption">모든 샷은 FRONT를 기준으로 위치를 조정합니다.</p>
+          </div>
+      
+          <div class="camera-controls">
+              <div class="slider-control">
+                  <label for="vertical-slider" data-translate-key="panel.camera.vertical">상하</label>
+                  <input type="range" id="vertical-slider" min="-90" max="90" value="0">
+                  <span id="vertical-slider-value" class="slider-value" data-translate-key="camera.term.vertical.eyeLevel">정면</span>
+              </div>
+              <div class="slider-control">
+                  <label for="horizontal-slider" data-translate-key="panel.camera.direction">방향</label>
+                  <input type="range" id="horizontal-slider" min="-180" max="180" value="0">
+                  <span id="horizontal-slider-value" class="slider-value" data-translate-key="camera.term.horizontal.front">정면</span>
+              </div>
+              <div class="slider-control">
+                  <label for="lens-slider" data-translate-key="panel.camera.lens">렌즈</label>
+                  <input type="range" id="lens-slider" min="12" max="200" value="50">
+                  <span id="lens-slider-value" class="slider-value">50mm</span>
+              </div>
+          </div>
+
+          <div id="camera-history-section" class="controls-section hidden">
+            <div class="history-header">
+              <h3 data-translate-key="panel.camera.history.title">최근 생성된 이미지</h3>
+              <button id="clear-camera-history-btn" class="icon-btn" data-translate-key-title="panel.camera.history.clear"><span class="material-symbols-outlined">delete_sweep</span></button>
+            </div>
+            <div id="camera-history-thumbnails"></div>
+          </div>
+      
+          <div class="panel-actions">
+            <button id="camera-generate-btn" class="action-btn">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <span data-translate-key="panel.camera.button.generate">생성하기</span>
+            </button>
+            <div class="button-group">
+                <button id="reset-camera-btn" class="secondary-btn" data-translate-key="panel.camera.button.resetCamera">카메라 초기화</button>
+                <button id="camera-reset-image-btn" class="secondary-btn" disabled data-translate-key="panel.camera.button.resetImage">이미지 리셋</button>
+            </div>
+          </div>
+          <div class="sidebar-actions common-image-actions">
+              <div class="button-group">
+                  <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                  <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+              </div>
+          </div>
+        </div>
+
+        <div id="light-panel" class="panel hidden">
+          <div class="controls-section">
+            <h3 data-translate-key="panel.light.presets">프리셋</h3>
+            <div id="light-presets" class="light-presets">
+              <button class="preset-btn" data-preset="daylight" data-translate-key-title="panel.light.presets.daylight"><span class="material-symbols-outlined">wb_sunny</span></button>
+              <button class="preset-btn" data-preset="golden-hour" data-translate-key-title="panel.light.presets.goldenHour"><span class="material-symbols-outlined">wb_twilight</span></button>
+              <button class="preset-btn" data-preset="studio" data-translate-key-title="panel.light.presets.studio"><span class="material-symbols-outlined">highlight</span></button>
+              <button class="preset-btn" data-preset="rim" data-translate-key-title="panel.light.presets.rim"><span class="material-symbols-outlined">flare</span></button>
+              <button class="preset-btn" data-preset="horror" data-translate-key-title="panel.light.presets.horror"><span class="material-symbols-outlined">mood_bad</span></button>
+              <button class="preset-btn" data-preset="mono" data-translate-key-title="panel.light.presets.mono"><span class="material-symbols-outlined">filter_b_and_w</span></button>
+              <button class="preset-btn" data-preset="fantasy" data-translate-key-title="panel.light.presets.fantasy"><span class="material-symbols-outlined">auto_fix_high</span></button>
+              <button class="preset-btn" data-preset="cinematic" data-translate-key-title="panel.light.presets.cinematic"><span class="material-symbols-outlined">movie</span></button>
+            </div>
+          </div>
+          <div class="light-canvas-wrapper">
+              <div id="light-canvas">
+                  <div class="subject-icon"><span class="material-symbols-outlined">person</span></div>
+                  <div id="light-handle"></div>
+              </div>
+          </div>
+          <div class="light-controls">
+             <div class="slider-control">
+                <label for="light-type" data-translate-key="panel.light.controls.type">종류</label>
+                <select id="light-type">
+                    <option value="Point" data-translate-key="panel.light.controls.type.point">점</option>
+                    <option value="Directional" data-translate-key="panel.light.controls.type.directional">방향</option>
+                    <option value="Spot" data-translate-key="panel.light.controls.type.spot">스팟</option>
+                    <option value="Ambient" data-translate-key="panel.light.controls.type.ambient">환경</option>
+                </select>
+             </div>
+             <div class="slider-control">
+                  <label for="light-intensity" data-translate-key="panel.light.controls.intensity">강도</label>
+                  <input type="range" id="light-intensity" min="0" max="200" value="100">
+                  <span id="light-intensity-value" class="slider-value">100%</span>
+              </div>
+              <div class="slider-control">
+                  <label for="light-temp" data-translate-key="panel.light.controls.temperature">색온도</label>
+                  <input type="range" id="light-temp" min="1000" max="10000" value="5500">
+                  <span id="light-temp-value" class="slider-value">5500K</span>
+              </div>
+              <div class="slider-control">
+                  <label for="light-hardness" data-translate-key="panel.light.controls.hardness">경도</label>
+                  <input type="range" id="light-hardness" min="0" max="100" value="50">
+                  <span id="light-hardness-value" class="slider-value">50%</span>
+              </div>
+               <div class="slider-control">
+                  <label for="light-color" data-translate-key="panel.light.controls.color">색상</label>
+                  <input type="color" id="light-color" value="#FFFFFF">
+              </div>
+          </div>
+           <div class="panel-actions">
+            <button id="reset-light-btn" class="secondary-btn" data-translate-key="panel.light.button.resetLight">조명 초기화</button>
+          </div>
+          <div class="sidebar-actions common-image-actions">
+              <div class="button-group">
+                  <button class="secondary-btn image-reset-btn" disabled data-translate-key="sidebar.actions.reset">이미지 리셋</button>
+                  <button class="secondary-btn image-delete-btn" disabled data-translate-key="sidebar.actions.delete">이미지 삭제</button>
+              </div>
+          </div>
+        </div>
+      </aside>
+      <section class="content">
+        <div id="image-wrapper">
+          <div id="content-controls" class="hidden">
+            <button id="undo-image-btn" class="icon-btn" data-translate-key-title="main.controls.undo" disabled><span class="material-symbols-outlined">undo</span></button>
+            <button id="redo-image-btn" class="icon-btn" data-translate-key-title="main.controls.redo" disabled><span class="material-symbols-outlined">redo</span></button>
+            <button id="download-btn" class="icon-btn" data-translate-key-title="main.controls.download"><span class="material-symbols-outlined">download</span></button>
+          </div>
+          <div id="placeholder-content">
+            <span class="material-symbols-outlined">image</span>
+            <p data-translate-key="placeholder.generate">좌측 패널에서 이미지를 생성하여 작업을 시작하세요.</p>
+            <input type="file" id="main-file-input" class="file-input" accept="image/*">
+          </div>
+          <img id="main-image" src="" alt="Generated Image" class="hidden">
+          <div id="light-overlay"></div>
+          
+          <div id="brush-preview"></div>
+          <canvas id="editor-canvas"></canvas>
+          <div id="crop-box" class="hidden">
+            <div class="resize-handle top-left" data-handle="top-left"></div>
+            <div class="resize-handle top-right" data-handle="top-right"></div>
+            <div class="resize-handle bottom-left" data-handle="bottom-left"></div>
+            <div class="resize-handle bottom-right" data-handle="bottom-right"></div>
+            <div class="resize-handle top-middle" data-handle="top"></div>
+            <div class="resize-handle bottom-middle" data-handle="bottom"></div>
+            <div class="resize-handle left-middle" data-handle="left"></div>
+            <div class="resize-handle right-middle" data-handle="right"></div>
+          </div>
+          <div id="loader" class="hidden">
+            <div class="spinner"></div>
+            <p data-translate-key="loader.generating">이미지를 생성 중입니다...</p>
+          </div>
+           <div id="comparison-viewer" class="hidden">
+            <div class="comparison-image" id="comparison-before-wrapper">
+                <img id="comparison-before-image" src="" alt="Before">
+                <div class="comparison-label" data-translate-key="comparison.before">원본</div>
+            </div>
+            <div class="comparison-image" id="comparison-after-wrapper">
+                <img id="comparison-after-image" src="" alt="After">
+                <div class="comparison-label" data-translate-key="comparison.after">개선됨</div>
+            </div>
+            <div id="comparison-slider">
+                <div class="slider-handle">
+                    <span class="material-symbols-outlined">unfold_more</span>
+                </div>
+            </div>
+            <div class="comparison-controls">
+              <button id="comparison-download-btn" class="icon-btn" data-translate-key-title="main.controls.download">
+                  <span class="material-symbols-outlined">download</span>
+              </button>
+              <button id="comparison-close-btn" class="icon-btn" data-translate-key-title="common.close">
+                  <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  
+  <div id="annotation-modal" class="hidden">
+    <div id="annotation-toolbar">
+      <div class="tool-group">
+        <button class="tool-btn-anno active" data-tool="brush" data-translate-key-title="modal.annotation.brush"><span class="material-symbols-outlined">brush</span></button>
+        <button class="tool-btn-anno" data-tool="eraser" data-translate-key-title="modal.annotation.eraser"><span class="material-symbols-outlined">ink_eraser</span></button>
+        <button class="tool-btn-anno" data-tool="text" data-translate-key-title="modal.annotation.text"><span class="material-symbols-outlined">title</span></button>
+      </div>
+      <div class="tool-group">
+        <div class="color-palette">
+          <div class="color-swatch active" data-color="#ffeb3b" style="background-color: #ffeb3b;"></div>
+          <div class="color-swatch" data-color="#f44336" style="background-color: #f44336;"></div>
+          <div class="color-swatch" data-color="#2196f3" style="background-color: #2196f3;"></div>
+          <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+          <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+        </div>
+      </div>
+       <div id="annotation-brush-size-group" class="tool-group size-control">
+          <label for="annotation-brush-size" data-translate-key="modal.annotation.brush">브러시</label>
+          <input type="range" id="annotation-brush-size" min="2" max="50" value="5">
+          <span id="annotation-brush-size-value">5</span>
+      </div>
+       <div id="annotation-text-size-group" class="tool-group size-control hidden">
+          <label for="annotation-text-size" data-translate-key="modal.annotation.text">텍스트</label>
+          <input type="range" id="annotation-text-size" min="10" max="100" value="20">
+          <span id="annotation-text-size-value">20</span>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn-anno" id="annotation-undo-btn" disabled><span class="material-symbols-outlined">undo</span></button>
+        <button class="tool-btn-anno" id="annotation-redo-btn" disabled><span class="material-symbols-outlined">redo</span></button>
+        <button class="tool-btn-anno" id="annotation-clear-btn"><span class="material-symbols-outlined">delete_sweep</span></button>
+      </div>
+      <div class="tool-group">
+        <button id="annotation-close-btn" class="tool-btn-anno" data-translate-key-title="common.close"><span class="material-symbols-outlined">close</span></button>
+        <button id="annotation-save-btn" class="action-btn" data-translate-key="modal.annotation.save">저장하고 닫기</button>
+      </div>
+    </div>
+    <div id="annotation-canvas-container">
+      <canvas id="annotation-canvas"></canvas>
+    </div>
+  </div>
+
+  <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
