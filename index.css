@@ -1325,7 +1325,7 @@ input:checked + .toggle-slider:before {
 }
 
 /* API Key Modal */
-#api-key-overlay {
+#api-key-overlay, #user-api-key-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1368,7 +1368,22 @@ input:checked + .toggle-slider:before {
   text-decoration: underline;
 }
 
-#select-api-key-btn {
+.api-key-modal input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background-color: #2a2a3a;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1rem;
+}
+.api-key-modal input[type="password"]::placeholder {
+    color: var(--text-muted);
+}
+
+#select-api-key-btn, #save-api-key-btn {
     width: 100%;
     margin-top: 10px;
 }
